@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-好慷智能体本地实现
+智能体本地实现
 基于FastAPI的聊天智能体，实现三个核心场景
 """
 
@@ -24,7 +24,7 @@ def load_config():
 intent_model, api_config = load_config()
 
 # 初始化FastAPI应用
-app = FastAPI(title="好慷智能体", description="好慷全能管家AI智能助理")
+app = FastAPI(title="智能体", description="全能管家AI智能助理")
 
 # 添加CORS中间件，解决跨域问题
 app.add_middleware(
@@ -369,7 +369,7 @@ async def chat_completions(request: ChatRequest):
     
     # 处理问候语
     if any(keyword in lower_input for keyword in ["你好", "您好", "hi", "hello"]):
-        response_content = "您好！我是好慷全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？"
+        response_content = "您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？"
     # 处理确认修改
     elif "确认修改" in lower_input:
         # 执行修改订单操作
@@ -478,7 +478,7 @@ async def chat_completions(request: ChatRequest):
     else:
         # 尝试匹配一些常见问题
         if any(keyword in lower_input for keyword in ["帮助", "功能", "能做什么"]):
-            response_content = "我是好慷全能管家AI智能助理，我可以为您提供以下服务：\n1. 查询服务笔记\n2. 查询订单信息\n3. 修改订单时间\n4. 取消订单\n\n您可以尝试说：\"我想查询订单\"或\"我想修改服务时间\""
+            response_content = "我是全能管家AI智能助理，我可以为您提供以下服务：\n1. 查询服务笔记\n2. 查询订单信息\n3. 修改订单时间\n4. 取消订单\n\n您可以尝试说：\"我想查询订单\"或\"我想修改服务时间\""
         else:
             response_content = f"您说的是：'{user_input}'，我正在努力理解您的需求...\n\n您可以尝试以下问题：\n- 查询服务笔记\n- 查询订单\n- 修改订单时间\n- 取消订单"
     
