@@ -1,0 +1,256 @@
+# 好慷智能体Dify Agent完整配置
+version: "1.0"
+
+# Agent基本信息
+agent:
+  name: "好慷全能管家AI智能助理"
+  description: "好慷智能体，提供服务笔记查询、订单管理等功能"
+  type: "conversational"
+  avatar: "haokang_avatar.png"
+  language: "zh-CN"
+
+# 意图识别配置
+intent_recognition:
+  model: "llm_based"
+  config_file: "intent_model.yml"
+  llm_params:
+    temperature: 0.1
+    max_tokens: 100
+
+# 工具配置
+tools:
+  # 业务API工具
+  - name: "business_api_client"
+    type: "api_client"
+    config_file: "api_config.yml"
+    base_url: "{{HAOKANG_API_BASE_URL}}"
+    api_key: "{{HAOKANG_API_KEY}}"
+    timeout: 10
+    retry: 3
+
+  # 知识库工具
+  - name: "knowledge_base_client"
+    type: "vector_db"
+    config_file: "api_config.yml"
+    knowledge_base_name: "service_notes"
+    embedding_model: "text-embedding-ada-002"
+
+# 决策中心配置
+decision_center:
+  type: "rule_based"
+  rules:
+    # 场景一：咨询类 - 查询笔记/知识
+    - name: "query_service_notes"
+      conditions:
+        - intent: "查询笔记/知识"
+      actions:
+        - tool: "knowledge_base_client"
+          operation: "query"
+          params_mapping:
+            user_query: "{{user_input}}"
+            user_id: "{{user_id}}"
+        - response_template:
+            type: "knowledge_base_response"
+            content: "{{knowledge_base_result}}"
+            buttons:
+              - text: "查看详情"
+                action: "view_detail"
+              - text: "返回"
+                action: "back"
+
+    # 场景二：查询类 - 查询订单/人员
+    - name: "query_orders"
+      conditions:
+        - intent: "查询订单/人员"
+      actions:
+        - tool: "business_api_client"
+          operation: "call_api"
+          api_name: "get_orders"
+          params_mapping:
+            user_id: "{{user_id}}"
+        - response_template:
+            type: "order_list"
+            content: |
+              为您找到以下订单：
+              {% for order in orders %}
+              - 订单ID：{{order.order_id}}
+                服务时间：{{order.service_time}}
+                服务类型：{{order.service_type}}
+                服务人员：{{order.service_person}}
+                状态：{{order.status}}
+              {% endfor %}
+              
+              您可以说"修改订单"或"取消订单"来管理您的订单。
+
+    # 场景三：操作类 - 修改订单
+    - name: "modify_order"
+      conditions:
+        - intent: "修改订单"
+      actions:
+        # 步骤1：如果没有订单ID，先查询订单列表
+        - if: "not order_id"
+          actions:
+            - tool: "business_api_client"
+              operation: "call_api"
+              api_name: "get_orders"
+              params_mapping:
+                user_id: "{{user_id}}"
+            - response_template:
+                type: "order_list_with_prompt"
+                content: |
+                  为您找到以下订单：
+                  {% for order in orders %}
+                  - 订单ID：{{order.order_id}}
+                    服务时间：{{order.service_time}}
+                  {% endfor %}
+                  
+                  请告诉您要修改的订单ID和新的服务时间。
+        # 步骤2：检查订单可修改性
+        - else:
+          actions:
+            - tool: "business_api_client"
+              operation: "call_api"
+              api_name: "check_order_modify"
+              params_mapping:
+                order_id: "{{order_id}}"
+                new_time: "{{new_time}}"
+            - if: check_result.can_modify
+              actions:
+                - confirmation:
+                    type: "modify_order"
+                    config_file: "confirmation_config.yml"
+              else:
+                actions:
+                  - response_template:
+                      type: "error"
+                      content: "抱歉，该订单无法修改：{{check_result.message}}"
+
+    # 场景三：操作类 - 取消订单
+    - name: "cancel_order"
+      conditions:
+        - intent: "取消订单"
+      actions:
+        # 步骤1：如果没有订单ID，先查询订单列表
+        - if: "not order_id"
+          actions:
+            - tool: "business_api_client"
+              operation: "call_api"
+              api_name: "get_orders"
+              params_mapping:
+                user_id: "{{user_id}}"
+            - response_template:
+                type: "order_list_with_prompt"
+                content: |
+                  为您找到以下订单：
+                  {% for order in orders %}
+                  - 订单ID：{{order.order_id}}
+                    服务时间：{{order.service_time}}
+                  {% endfor %}
+                  
+                  请告诉您要取消的订单ID。
+        # 步骤2：二次确认
+        - else:
+          actions:
+            - confirmation:
+                type: "cancel_order"
+                config_file: "confirmation_config.yml"
+
+    # 确认修改订单
+    - name: "confirm_modify_order"
+      conditions:
+        - intent: "确认修改"
+        - state: "等待确认修改"
+      actions:
+        - tool: "business_api_client"
+          operation: "call_api"
+          api_name: "update_order"
+          params_mapping:
+            order_id: "{{order_id}}"
+            service_time: "{{new_time}}"
+        - response_template:
+            type: "success"
+            content: "订单修改成功！新的服务时间为：{{order.service_time}}"
+
+    # 确认取消订单
+    - name: "confirm_cancel_order"
+      conditions:
+        - intent: "确认取消"
+        - state: "等待确认取消"
+      actions:
+        - tool: "business_api_client"
+          operation: "call_api"
+          api_name: "cancel_order"
+          params_mapping:
+            order_id: "{{order_id}}"
+        - response_template:
+            type: "success"
+            content: "订单取消成功！"
+
+    # 取消操作
+    - name: "cancel_operation"
+      conditions:
+        - intent: "取消操作"
+      actions:
+        - response_template:
+            type: "info"
+            content: "已取消操作"
+
+# 对话管理配置
+conversation_management:
+  max_history: 10
+  memory_type: "short_term"
+  clear_history_on_new_topic: true
+
+# 状态管理配置
+state_management:
+  type: "finite_state_machine"
+  config_file: "confirmation_config.yml"
+  initial_state: "初始状态"
+  persist_state: true
+  state_ttl: 3600  # 1小时
+
+# 响应配置
+response:
+  default_template:
+    type: "text"
+    content: "抱歉，我不太明白您的意思。请您换一种方式提问。"
+  error_template:
+    type: "text"
+    content: "抱歉，服务暂时不可用，请稍后重试。"
+  loading_template:
+    type: "text"
+    content: "正在处理您的请求..."
+
+# 安全配置
+security:
+  enable_rate_limit: true
+  rate_limit:
+    requests_per_minute: 60
+  enable_input_filter: true
+  filter_sensitive_words: true
+  sensitive_words_file: "sensitive_words.txt"
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "json"
+  file: "haokang_agent.log"
+  rotation: "daily"
+  retention: 30
+
+# 监控配置
+monitoring:
+  enable_metrics: true
+  metrics_endpoint: "/metrics"
+  enable_tracing: true
+  tracing_endpoint: "{{JAEGER_ENDPOINT}}"
+
+# 环境变量配置
+environment_variables:
+  required:
+    - HAOKANG_API_BASE_URL
+    - HAOKANG_API_KEY
+    - OPENAI_API_KEY
+  optional:
+    - JAEGER_ENDPOINT
+    - LOG_LEVEL

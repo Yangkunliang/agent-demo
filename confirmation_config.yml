@@ -1,0 +1,147 @@
+# 好慷智能体操作类场景二次确认机制配置
+version: "1.0"
+
+# 二次确认配置
+confirmation:
+  # 修改订单确认配置
+  modify_order:
+    # 确认触发条件
+    trigger_conditions:
+      - intent: "修改订单"
+      - has_required_params: true
+      - check_result: {"can_modify": true}
+    
+    # 确认消息模板
+    confirmation_message:
+      type: "template"
+      content: |
+        我已为您查询到订单状态：
+        {{check_result.message}}
+        
+        您是否确认将订单{{order_id}}修改为{{new_time}}？
+      buttons:
+        - text: "确认修改"
+          action: "confirm_modify"
+          intent: "确认修改"
+        - text: "取消操作"
+          action: "cancel_operation"
+          intent: "取消操作"
+    
+    # 执行逻辑
+    execution:
+      api: "update_order"
+      params_mapping:
+        order_id: "{{order_id}}"
+        service_time: "{{new_time}}"
+      success_message: "订单修改成功！新的服务时间为：{{order.service_time}}"
+      error_message: "订单修改失败：{{error_message}}"
+    
+    # 取消逻辑
+    cancellation:
+      message: "已取消订单修改操作"
+
+  # 取消订单确认配置
+  cancel_order:
+    # 确认触发条件
+    trigger_conditions:
+      - intent: "取消订单"
+      - has_required_params: true
+    
+    # 确认消息模板
+    confirmation_message:
+      type: "template"
+      content: |
+        您确定要取消订单{{order_id}}吗？
+        取消后可能会产生相应的费用，请您确认。
+      buttons:
+        - text: "确认取消"
+          action: "confirm_cancel"
+          intent: "确认取消"
+        - text: "取消操作"
+          action: "cancel_operation"
+          intent: "取消操作"
+    
+    # 执行逻辑
+    execution:
+      api: "cancel_order"
+      params_mapping:
+        order_id: "{{order_id}}"
+      success_message: "订单取消成功！"
+      error_message: "订单取消失败：{{error_message}}"
+    
+    # 取消逻辑
+    cancellation:
+      message: "已取消订单取消操作"
+
+# 状态管理配置
+state_management:
+  # 修改订单状态流程
+  modify_order_flow:
+    initial_state: "等待修改请求"
+    states:
+      - name: "等待修改请求"
+        transitions:
+          - event: "修改订单请求"
+            next_state: "检查可修改性"
+      - name: "检查可修改性"
+        transitions:
+          - event: "检查通过"
+            next_state: "等待用户确认"
+          - event: "检查失败"
+            next_state: "结束"
+      - name: "等待用户确认"
+        transitions:
+          - event: "用户确认"
+            next_state: "执行修改"
+          - event: "用户取消"
+            next_state: "结束"
+      - name: "执行修改"
+        transitions:
+          - event: "修改成功"
+            next_state: "结束"
+          - event: "修改失败"
+            next_state: "结束"
+      - name: "结束"
+        transitions: []
+    
+  # 取消订单状态流程
+  cancel_order_flow:
+    initial_state: "等待取消请求"
+    states:
+      - name: "等待取消请求"
+        transitions:
+          - event: "取消订单请求"
+            next_state: "等待用户确认"
+      - name: "等待用户确认"
+        transitions:
+          - event: "用户确认"
+            next_state: "执行取消"
+          - event: "用户取消"
+            next_state: "结束"
+      - name: "执行取消"
+        transitions:
+          - event: "取消成功"
+            next_state: "结束"
+          - event: "取消失败"
+            next_state: "结束"
+      - name: "结束"
+        transitions: []
+
+# 状态数据结构配置
+state_data:
+  # 修改订单状态数据
+  modify_order:
+    required_fields:
+      - order_id
+      - new_time
+      - check_result
+    optional_fields:
+      - original_time
+      - service_type
+  
+  # 取消订单状态数据
+  cancel_order:
+    required_fields:
+      - order_id
+    optional_fields:
+      - order_info
