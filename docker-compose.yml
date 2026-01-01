@@ -1,0 +1,51 @@
+services:
+  web:
+    image: langgenius/dify-web:latest
+    container_name: dify-web
+    ports:
+      - 8000:3000
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api:5001
+    restart: always
+    networks:
+      - dify-network
+
+  api:
+    image: langgenius/dify-api:latest
+    container_name: dify-api
+    ports:
+      - 5001:5001
+    depends_on:
+      - redis
+    volumes:
+      - ./data/dify-api:/app/storage
+    environment:
+      - SECRET_KEY=your-secret-key-change-me
+      - DATABASE_URL=postgresql://dify:dify_password@localhost:5432/dify_db
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=your-openai-api-key-change-me
+      - DEEPSEEK_API_KEY=your-deepseek-api-key-change-me
+    restart: always
+    networks:
+      - dify-network
+
+  redis:
+    image: redis:7
+    container_name: dify-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - dify-redis-data:/data
+    restart: always
+    networks:
+      - dify-network
+
+volumes:
+  dify-redis-data:
+
+networks:
+  dify-network:
+    driver: bridge
+    external: false
