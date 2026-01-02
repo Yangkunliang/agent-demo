@@ -831,7 +831,13 @@
                                     const delta = data.choices[0].delta;
                                     if (delta.content) {
                                         fullResponse += delta.content;
-                                        contentDiv.textContent = fullResponse;
+                                        // 优化显示格式：转换换行符，处理列表
+                                        let displayContent = fullResponse;
+                                        // 将\n转换为<br>标签
+                                        displayContent = displayContent.replace(/\n/g, '<br>');
+                                        // 优化列表显示，在数字编号前添加空格和换行
+                                        displayContent = displayContent.replace(/(\d+\.\s)/g, '<br>$1');
+                                        contentDiv.innerHTML = displayContent;
                                         scrollToBottom();
                                     }
                                 }
