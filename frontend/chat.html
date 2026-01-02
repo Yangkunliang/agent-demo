@@ -864,19 +864,31 @@
                                         
                                         // 优化显示格式：转换换行符，处理列表，减少多余空白
                                         let displayContent = fullResponse;
-                                        // 合并多个连续换行符为一个
+                                        
+                                        // 1. 先在选项前添加换行，处理连续的选项格式：- 选项1: xxx - 选项2: xxx
+                                        displayContent = displayContent.replace(/(-\s*选项\d+)/g, '<br>$1');
+                                        
+                                        // 2. 转换原始换行符为<br>标签
                                         displayContent = displayContent.replace(/\n+/g, '<br>');
-                                        // 处理连续的数字分点，如"1. xxx 2. xxx"，在数字编号前添加换行
+                                        
+                                        // 3. 处理连续的数字分点，如"1. xxx 2. xxx"，在数字编号前添加换行
                                         displayContent = displayContent.replace(/(\d+\.\s)/g, '<br>$1');
-                                        // 移除开头的多余换行
+                                        
+                                        // 4. 移除开头的多余换行
                                         displayContent = displayContent.replace(/^<br>+/, '');
-                                        // 合并多个连续换行符为一个，避免重复换行
+                                        
+                                        // 5. 合并多个连续换行符为一个，避免重复换行
                                         displayContent = displayContent.replace(/<br>+<br>/g, '<br>');
                                         
-                                        // 将选项转换为可点击按钮
-                                        // 匹配格式：- 选项1: 内容 或 - 选项1：内容
-                                        const optionRegex = /-\s*选项(\d+):?\s*([^<br>]+)/g;
+                                        // 6. 将选项转换为可点击按钮
+                                        // 匹配格式：- 选项1: xxx - 选项2: xxx
+                                        // 使用lookahead确保只匹配到当前选项的内容
+                                        const optionRegex = /-\s*选项(\d+):\s*([^-]+?)(?=-\s*选项|$)/g;
                                         displayContent = displayContent.replace(optionRegex, '<button class="option-button" onclick="selectOption(\'选项$1:$2\')" style="display: block; margin: 8px 0; padding: 10px 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px;">选项$1: $2</button>');
+                                        
+                                        // 7. 处理中文冒号的情况
+                                        const optionRegexChinese = /-\s*选项(\d+)：\s*([^-]+?)(?=-\s*选项|$)/g;
+                                        displayContent = displayContent.replace(optionRegexChinese, '<button class="option-button" onclick="selectOption(\'选项$1:$2\')" style="display: block; margin: 8px 0; padding: 10px 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px;">选项$1: $2</button>');
                                         
                                         contentDiv.innerHTML = displayContent;
                                         scrollToBottom();
