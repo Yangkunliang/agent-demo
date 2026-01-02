@@ -837,10 +837,12 @@
                                         let displayContent = fullResponse;
                                         // 合并多个连续换行符为一个
                                         displayContent = displayContent.replace(/\n+/g, '<br>');
-                                        // 处理列表项：在数字编号前添加换行，但避免开头多余换行
-                                        displayContent = displayContent.replace(/(?!^)<br>*(\d+\.\s)/g, '<br>$1');
+                                        // 处理连续的数字分点，如"1. xxx 2. xxx"，在数字编号前添加换行
+                                        displayContent = displayContent.replace(/(\d+\.\s)/g, '<br>$1');
                                         // 移除开头的多余换行
                                         displayContent = displayContent.replace(/^<br>+/, '');
+                                        // 合并多个连续换行符为一个，避免重复换行
+                                        displayContent = displayContent.replace(/<br>+<br>/g, '<br>');
                                         contentDiv.innerHTML = displayContent;
                                         scrollToBottom();
                                     }
