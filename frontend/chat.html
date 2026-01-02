@@ -626,8 +626,8 @@
         const expandedActions = document.getElementById('expandedActions');
         const overlay = document.getElementById('overlay');
 
-        // 消息历史
-        let messageHistory = [
+        // 从localStorage加载消息历史，如果没有则使用默认消息
+        let messageHistory = JSON.parse(localStorage.getItem('chatHistory')) || [
             {
                 role: 'system',
                 content: '欢迎使用全能管家AI智能助理！'
@@ -758,6 +758,8 @@
             
             // 添加到消息历史
             messageHistory.push({ role: 'user', content: message });
+            // 保存消息历史到localStorage
+            localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
             
             // 清空输入框
             chatInput.value = '';
@@ -852,11 +854,17 @@
                 
                 // 添加到消息历史
                 messageHistory.push({ role: 'assistant', content: fullResponse });
+                // 保存消息历史到localStorage
+                localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
                 
             } catch (error) {
                 console.error('Error:', error);
                 hideTyping();
-                addMessage('assistant', `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`);
+                const errorMsg = `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`;
+                addMessage('assistant', errorMsg);
+                // 添加错误消息到历史并保存
+                messageHistory.push({ role: 'assistant', content: errorMsg });
+                localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
             } finally {
                 // 启用发送按钮和输入框
                 sendButton.disabled = false;
@@ -867,6 +875,15 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
+            // 清空聊天界面，准备加载历史记录
+            chatMessages.innerHTML = '';
+            
+            // 加载历史消息到聊天界面
+            messageHistory.forEach(msg => {
+                addMessage(msg.role, msg.content);
+            });
+            
+            // 设置输入框焦点
             chatInput.focus();
         });
     </script>
