@@ -748,6 +748,15 @@
             sendMessage();
         }
 
+        // 处理选项点击事件
+        function selectOption(option) {
+            // 设置输入框内容为选中的选项
+            chatInput.value = option;
+            adjustTextareaHeight();
+            // 自动发送消息
+            sendMessage();
+        }
+
         // 处理键盘事件
         function handleKeyDown(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -863,6 +872,12 @@
                                         displayContent = displayContent.replace(/^<br>+/, '');
                                         // 合并多个连续换行符为一个，避免重复换行
                                         displayContent = displayContent.replace(/<br>+<br>/g, '<br>');
+                                        
+                                        // 将选项转换为可点击按钮
+                                        // 匹配格式：- 选项1: 内容 或 - 选项1：内容
+                                        const optionRegex = /-\s*选项(\d+):?\s*([^<br>]+)/g;
+                                        displayContent = displayContent.replace(optionRegex, '<button class="option-button" onclick="selectOption(\'选项$1:$2\')" style="display: block; margin: 8px 0; padding: 10px 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px;">选项$1: $2</button>');
+                                        
                                         contentDiv.innerHTML = displayContent;
                                         scrollToBottom();
                                     }
