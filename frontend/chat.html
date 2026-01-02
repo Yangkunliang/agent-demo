@@ -786,13 +786,18 @@
             
             // 3. 处理所有选项，采用更简单的方式
             // 先检测是否包含选项列表
-            if (processedContent.includes('以下选项') || 
-                processedContent.includes('可供选择') || 
-                processedContent.includes('**问题**') || 
-                processedContent.includes('**可选服务**') ||
-                processedContent.includes('您需要哪种类型') ||
-                processedContent.includes('可选服务：')) {
+            const hasOptions = processedContent.includes('以下选项') || 
+                              processedContent.includes('可供选择') || 
+                              processedContent.includes('**问题**') || 
+                              processedContent.includes('**可选服务**') ||
+                              processedContent.includes('您需要哪种类型') ||
+                              processedContent.includes('可选服务：') ||
+                              processedContent.includes('请问您需要的是：') ||
+                              processedContent.includes('请问您更倾向于哪种') ||
+                              /^(\d+\.|-|\*)\s+/.test(processedContent.replace(/<br>/g, '\n')) || // 检测是否包含列表格式
+                              processedContent.includes('1. ') && processedContent.includes('2. '); // 检测是否包含数字编号选项
                 
+            if (hasOptions) {
                 // 3.1 分割为行
                 const lines = processedContent.split('<br>');
                 let newContent = '';
