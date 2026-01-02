@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>全能管家AI智能助理</title>
     <style>
         /* 全局样式重置 */
@@ -13,99 +13,151 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         /* 聊天容器 */
         .chat-container {
-            max-width: 600px;
+            width: 100vw;
             height: 100vh;
-            margin: 0 auto;
-            background-color: #fff;
+            background: white;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         /* 顶部导航栏 */
         .chat-header {
-            background-color: #007aff;
-            color: #fff;
-            padding: 16px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: env(safe-area-inset-top, 20px) 20px 20px 20px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .chat-header h1 {
             font-size: 18px;
             font-weight: 600;
+            margin: 0;
+        }
+
+        .status {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .status::before {
+            content: "●";
+            color: #4ade80;
+            margin-right: 5px;
         }
 
         /* 聊天消息区域 */
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f5f5f5'/%3E%3Cpath d='M0 0h100v100H0z' fill='none' stroke='%23e0e0e0' stroke-width='0.5'/%3E%3C/svg%3E");
-    }
+        .chat-messages {
+            flex: 1;
+            padding: 20px 15px;
+            overflow-y: auto;
+            background: #f8fafc;
+            -webkit-overflow-scrolling: touch;
+        }
 
         /* 消息气泡 */
         .message {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            position: relative;
-            word-wrap: break-word;
+            margin-bottom: 15px;
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+            max-width: 100%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* 用户消息 */
         .message.user {
-            align-self: flex-end;
-            background-color: #007aff;
-            color: #fff;
-            border-bottom-right-radius: 6px;
+            justify-content: flex-end;
         }
 
         /* 智能体消息 */
         .message.assistant {
-            align-self: flex-start;
-            background-color: #e5e5ea;
-            color: #333;
-            border-bottom-left-radius: 6px;
+            justify-content: flex-start;
         }
 
         /* 系统消息 */
         .message.system {
-            align-self: center;
-            background-color: #f0f0f0;
+            justify-content: center;
+        }
+
+        /* 消息内容 */
+        .message-content {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        /* 用户消息样式 */
+        .message.user .message-content {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(79, 172, 254, 0.2);
+        }
+
+        /* 智能体消息样式 */
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 系统消息样式 */
+        .message.system .message-content {
+            background: #f0f0f0;
             color: #666;
             font-size: 12px;
             padding: 8px 12px;
             border-radius: 12px;
+            max-width: 70%;
         }
 
         /* 加载状态 */
-        .message.loading {
-            align-self: flex-start;
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            padding: 10px 16px;
+            margin-bottom: 15px;
         }
 
-        .typing-indicator {
+        .typing-dots {
             display: flex;
-            align-items: center;
             gap: 4px;
         }
 
         .typing-dot {
             width: 8px;
             height: 8px;
+            background: #94a3b8;
             border-radius: 50%;
-            background-color: #999;
             animation: typing 1.4s infinite ease-in-out;
         }
 
@@ -119,10 +171,12 @@
 
         @keyframes typing {
             0%, 80%, 100% {
-                transform: scale(0);
+                transform: scale(0.8);
+                opacity: 0.5;
             }
             40% {
                 transform: scale(1);
+                opacity: 1;
             }
         }
 
@@ -138,109 +192,306 @@
             text-align: left;
         }
 
-        /* 输入区域 */
-        .chat-input-container {
-            padding: 12px 16px;
-            background-color: #fff;
-            border-top: 1px solid #e0e0e0;
+        /* 快速操作区域 */
+        .quick-actions {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            position: relative;
+        }
+
+        /* 功能菜单 */
+        .function-menu {
+            padding: 15px;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        /* 默认操作按钮 */
+        .default-actions {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+        }
+
+        /* 操作按钮样式 */
+        .action-btn {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+        }
+
+        /* 更多按钮 */
+        .more-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .more-btn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* 展开的操作菜单 */
+        .expanded-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 25px 15px;
+            padding-bottom: max(25px, env(safe-area-inset-bottom, 25px));
+            transform: translateY(100%);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+            z-index: 1001;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .expanded-actions.show {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 展开菜单头部 */
+        .expanded-header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .drag-handle {
+            width: 40px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+            margin: 0 auto 15px auto;
+        }
+
+        .expanded-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* 展开菜单网格 */
+        .expanded-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 展开菜单按钮 */
+        .expanded-action-btn {
+            padding: 20px 12px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .expanded-action-btn:hover, .expanded-action-btn:active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.25);
+        }
+
+        .expanded-action-btn .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        /* 关闭展开菜单按钮 */
+        .close-expanded {
+            width: 100%;
+            padding: 14px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            font-size: 14px;
+        }
+
+        .close-expanded:hover {
+            background: #e2e8f0;
+        }
+
+        /* 遮罩层 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 0 15px 15px 15px;
         }
 
         /* 输入框 */
         .chat-input {
             flex: 1;
-            min-height: 36px;
+            min-height: 40px;
             max-height: 120px;
-            padding: 10px 14px;
-            border: 1px solid #ddd;
-            border-radius: 18px;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
             resize: none;
             font-size: 14px;
             line-height: 1.4;
             font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
         }
 
         .chat-input:focus {
-            outline: none;
-            border-color: #007aff;
-            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+            border-color: #4facfe;
         }
 
         /* 发送按钮 */
         .send-button {
-            width: 36px;
-            height: 36px;
-            background-color: #007aff;
-            color: #fff;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
             border: none;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .send-button:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
-        }
-
-        .send-button:active {
-            transform: scale(0.95);
-        }
-
-        .send-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* 按钮图标 */
-        .send-button::before {
-            content: '→';
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* 欢迎消息 */
-        .welcome-message {
-            text-align: center;
-            padding: 20px;
-            color: #666;
+            transition: all 0.2s;
+            touch-action: manipulation;
             font-size: 14px;
         }
 
-        /* 消息气泡中的按钮 */
-        .message-buttons {
+        .send-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .send-button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 服务卡片 */
+        .service-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .service-title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .service-status {
+            padding: 4px 8px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .service-details {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .service-actions {
             display: flex;
             gap: 8px;
             margin-top: 10px;
-            flex-wrap: wrap;
         }
 
-        .message-button {
+        .service-action-btn {
             padding: 6px 12px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 16px;
-            color: #fff;
             font-size: 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
-        .assistant .message-button {
-            background-color: rgba(0, 122, 255, 0.1);
-            border: 1px solid rgba(0, 122, 255, 0.3);
-            color: #007aff;
-        }
-
-        .message-button:hover {
-            opacity: 0.8;
-            transform: translateY(-1px);
+        .service-action-btn:hover {
+            background: #f1f5f9;
         }
 
         /* 滚动条样式 */
@@ -260,43 +511,104 @@
         .chat-messages::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
-
-        /* 响应式调整 */
-        @media (max-width: 480px) {
-            .message {
-                max-width: 85%;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <!-- 顶部导航栏 -->
         <div class="chat-header">
-            <h1>全能管家</h1>
+            <h1>🤖 全能管家AI智能助理</h1>
+            <div class="status">在线服务中</div>
         </div>
 
         <!-- 聊天消息区域 -->
         <div class="chat-messages" id="chatMessages">
             <!-- 欢迎消息 -->
             <div class="message system">
-                欢迎使用全能管家AI智能助理！
+                <div class="message-content">
+                    欢迎使用全能管家AI智能助理！
+                </div>
             </div>
             <div class="message assistant">
-                您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？
+                <div class="message-content">
+                    您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？
+                </div>
             </div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="chat-input-container">
-            <textarea 
-                class="chat-input" 
-                id="chatInput" 
-                placeholder="请输入您的问题..."
-                rows="1"
-                maxlength="1000"
-            ></textarea>
-            <button class="send-button" id="sendButton" onclick="sendMessage()"></button>
+        <!-- 打字指示器 -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <span style="margin-left: 10px; font-size: 12px; color: #64748b;">AI正在思考...</span>
+        </div>
+
+        <!-- 快速操作区域 -->
+        <div class="quick-actions">
+            <div class="function-menu">
+                <div class="default-actions">
+                    <div class="action-btn" onclick="handleQuickAction('order')">📋 订单查询</div>
+                    <div class="action-btn" onclick="handleQuickAction('service')">👨‍💼 服务咨询</div>
+                </div>
+                <button class="more-btn" onclick="toggleExpandedActions()">
+                    <span style="font-size: 18px;">⋯</span>
+                </button>
+            </div>
+            
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <textarea 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="输入您的问题..."
+                    rows="1"
+                    maxlength="1000"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="adjustTextareaHeight()"
+                ></textarea>
+                <button class="send-button" id="sendButton" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+
+        <!-- 遮罩层 -->
+        <div class="overlay" id="overlay" onclick="closeExpandedActions()"></div>
+        
+        <!-- 展开的操作菜单 -->
+        <div class="expanded-actions" id="expandedActions">
+            <div class="expanded-header">
+                <div class="drag-handle"></div>
+                <div class="expanded-title">功能菜单</div>
+            </div>
+            <div class="expanded-grid">
+                <div class="expanded-action-btn" onclick="handleQuickAction('order'); closeExpandedActions()">
+                    <div class="icon">📋</div>
+                    <div>订单查询</div>
+                </div>
+                <div class="expanded-action-btn" onclick="handleQuickAction('service'); closeExpandedActions()">
+                    <div class="icon">👨‍💼</div>
+                    <div>服务咨询</div>
+                </div>
+                <div class="expanded-action-btn" onclick="handleQuickAction('renew'); closeExpandedActions()">
+                    <div class="icon">🔄</div>
+                    <div>订单续签</div>
+                </div>
+                <div class="expanded-action-btn" onclick="handleQuickAction('cancel'); closeExpandedActions()">
+                    <div class="icon">❌</div>
+                    <div>取消服务</div>
+                </div>
+                <div class="expanded-action-btn" onclick="handleQuickAction('complaint'); closeExpandedActions()">
+                    <div class="icon">💬</div>
+                    <div>投诉建议</div>
+                </div>
+                <div class="expanded-action-btn" onclick="handleQuickAction('contact'); closeExpandedActions()">
+                    <div class="icon">📞</div>
+                    <div>联系我们</div>
+                </div>
+            </div>
+            <button class="close-expanded" onclick="closeExpandedActions()">收起菜单</button>
         </div>
     </div>
 
@@ -310,6 +622,9 @@
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const expandedActions = document.getElementById('expandedActions');
+        const overlay = document.getElementById('overlay');
 
         // 消息历史
         let messageHistory = [
@@ -328,8 +643,8 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             
-            // 添加消息内容
             const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
             contentDiv.innerHTML = content;
             messageDiv.appendChild(contentDiv);
             
@@ -346,6 +661,8 @@
             
             // 滚动到最新消息
             scrollToBottom();
+            
+            return messageDiv;
         }
 
         // 滚动到最新消息
@@ -353,27 +670,77 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // 显示加载状态
-        function showLoading() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message assistant loading';
-            loadingDiv.id = 'loadingMessage';
-            loadingDiv.innerHTML = `
-                <div class="typing-indicator">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-            chatMessages.appendChild(loadingDiv);
+        // 显示打字状态
+        function showTyping() {
+            typingIndicator.style.display = 'flex';
             scrollToBottom();
         }
 
-        // 隐藏加载状态
-        function hideLoading() {
-            const loadingMessage = document.getElementById('loadingMessage');
-            if (loadingMessage) {
-                loadingMessage.remove();
+        // 隐藏打字状态
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // 调整输入框高度
+        function adjustTextareaHeight() {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+        }
+
+        // 切换展开操作菜单
+        function toggleExpandedActions() {
+            if (expandedActions.classList.contains('show')) {
+                closeExpandedActions();
+            } else {
+                expandedActions.classList.add('show');
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // 关闭展开操作菜单
+        function closeExpandedActions() {
+            expandedActions.classList.remove('show');
+            overlay.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 处理快捷操作
+        function handleQuickAction(action) {
+            let userMessage = '';
+            
+            switch(action) {
+                case 'order':
+                    userMessage = '我想查询我的订单';
+                    break;
+                case 'service':
+                    userMessage = '我想咨询服务相关问题';
+                    break;
+                case 'renew':
+                    userMessage = '我想续签订单';
+                    break;
+                case 'cancel':
+                    userMessage = '我想取消服务';
+                    break;
+                case 'complaint':
+                    userMessage = '我要投诉或建议';
+                    break;
+                case 'contact':
+                    userMessage = '我想联系客服';
+                    break;
+            }
+            
+            // 设置输入框内容并发送
+            chatInput.value = userMessage;
+            adjustTextareaHeight();
+            sendMessage();
+        }
+
+        // 处理键盘事件
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
         }
 
@@ -396,18 +763,8 @@
             chatInput.value = '';
             adjustTextareaHeight();
             
-            // 隐藏旧的加载状态
-            hideLoading();
-            
-            // 创建一个空的智能体消息元素用于实时更新
-            const assistantMessageDiv = document.createElement('div');
-            assistantMessageDiv.className = 'message assistant';
-            const contentDiv = document.createElement('div');
-            assistantMessageDiv.appendChild(contentDiv);
-            chatMessages.appendChild(assistantMessageDiv);
-            scrollToBottom();
-            
-            let fullResponse = '';
+            // 显示打字状态
+            showTyping();
             
             try {
                 // 发送请求到API
@@ -427,6 +784,14 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                // 隐藏打字状态
+                hideTyping();
+                
+                // 创建智能体消息元素用于实时更新
+                const assistantMessageDiv = addMessage('assistant', '', false);
+                const contentDiv = assistantMessageDiv.querySelector('.message-content');
+                let fullResponse = '';
                 
                 // 获取响应流的读取器
                 const reader = response.body.getReader();
@@ -451,6 +816,11 @@
                             const jsonStr = line.slice(6);
                             if (jsonStr === '[DONE]') {
                                 // 流式响应结束
+                                // 添加时间戳
+                                const timeDiv = document.createElement('div');
+                                timeDiv.className = 'message-time';
+                                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                                assistantMessageDiv.appendChild(timeDiv);
                                 break;
                             }
                             
@@ -472,18 +842,13 @@
                     }
                 }
                 
-                // 添加时间戳
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'message-time';
-                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                assistantMessageDiv.appendChild(timeDiv);
-                
                 // 添加到消息历史
                 messageHistory.push({ role: 'assistant', content: fullResponse });
                 
             } catch (error) {
                 console.error('Error:', error);
-                contentDiv.innerHTML = `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`;
+                hideTyping();
+                addMessage('assistant', `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`);
             } finally {
                 // 启用发送按钮和输入框
                 sendButton.disabled = false;
@@ -491,23 +856,6 @@
                 chatInput.focus();
             }
         }
-
-        // 调整输入框高度
-        function adjustTextareaHeight() {
-            chatInput.style.height = 'auto';
-            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-        }
-
-        // 事件监听
-        chatInput.addEventListener('input', adjustTextareaHeight);
-        
-        // 按下Enter发送消息，Shift+Enter换行
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
