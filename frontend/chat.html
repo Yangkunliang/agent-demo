@@ -799,8 +799,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                // 隐藏打字状态
-                hideTyping();
+                // 不要立即隐藏打字状态，等到AI开始回复时再隐藏
                 
                 // 创建智能体消息元素用于实时更新
                 const assistantMessageDiv = addMessage('assistant', '', false);
@@ -844,6 +843,8 @@
                                 if (data.choices && data.choices[0]) {
                                     const delta = data.choices[0].delta;
                                     if (delta.content) {
+                                        // 收到AI回复，隐藏打字状态
+                                        hideTyping();
                                         fullResponse += delta.content;
                                         // 优化显示格式：转换换行符，处理列表，减少多余空白
                                         let displayContent = fullResponse;
