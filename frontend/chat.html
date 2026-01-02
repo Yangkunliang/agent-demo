@@ -801,15 +801,13 @@
                 
                 // 不要立即隐藏打字状态，等到AI开始回复时再隐藏
                 
-                // 创建智能体消息元素用于实时更新
-                const assistantMessageDiv = addMessage('assistant', '', false);
-                const contentDiv = assistantMessageDiv.querySelector('.message-content');
-                let fullResponse = '';
-                
                 // 获取响应流的读取器
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let buffer = '';
+                let fullResponse = '';
+                let assistantMessageDiv = null;
+                let contentDiv = null;
                 
                 // 读取流数据
                 while (true) {
@@ -829,11 +827,13 @@
                             const jsonStr = line.slice(6);
                             if (jsonStr === '[DONE]') {
                                 // 流式响应结束
-                                // 添加时间戳
-                                const timeDiv = document.createElement('div');
-                                timeDiv.className = 'message-time';
-                                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                                assistantMessageDiv.appendChild(timeDiv);
+                                if (assistantMessageDiv) {
+                                    // 添加时间戳
+                                    const timeDiv = document.createElement('div');
+                                    timeDiv.className = 'message-time';
+                                    timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                                    assistantMessageDiv.appendChild(timeDiv);
+                                }
                                 break;
                             }
                             
@@ -846,6 +846,13 @@
                                         // 收到AI回复，隐藏打字状态
                                         hideTyping();
                                         fullResponse += delta.content;
+                                        
+                                        // 如果还没有创建智能体消息元素，现在创建
+                                        if (!assistantMessageDiv) {
+                                            assistantMessageDiv = addMessage('assistant', '', false);
+                                            contentDiv = assistantMessageDiv.querySelector('.message-content');
+                                        }
+                                        
                                         // 优化显示格式：转换换行符，处理列表，减少多余空白
                                         let displayContent = fullResponse;
                                         // 合并多个连续换行符为一个
@@ -867,10 +874,13 @@
                     }
                 }
                 
-                // 添加到消息历史
-                messageHistory.push({ role: 'assistant', content: fullResponse });
-                // 保存消息历史到localStorage
-                localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
+                // 只有当有实际回复内容时，才添加到消息历史
+                if (fullResponse) {
+                    // 添加到消息历史
+                    messageHistory.push({ role: 'assistant', content: fullResponse });
+                    // 保存消息历史到localStorage
+                    localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
+                }
                 
             } catch (error) {
                 console.error('Error:', error);
