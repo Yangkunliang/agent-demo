@@ -447,6 +447,58 @@
             padding: 15px;
             margin: 10px 0;
         }
+        
+        /* 选项按钮样式 */
+        .option-button {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            color: #4facfe;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.5;
+            transition: all 0.2s ease;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .option-button:hover {
+            background: transparent;
+            color: #1e40af;
+            text-decoration: underline;
+            transform: none;
+        }
+        
+        .option-button:active {
+            transform: none;
+        }
+        
+        /* 确保按钮之间没有额外间距 */
+        .message.assistant .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* 移除按钮之间的额外间距 */
+        .message.assistant .message-content button.option-button + button.option-button {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        
+        /* 确保<br>标签不会影响按钮间距 */
+        .message.assistant .message-content button.option-button + br {
+            display: none;
+        }
+        
+        /* 确保按钮内部没有额外间距 */
+        .message.assistant .message-content button.option-button br {
+            display: none;
+        }
 
         .service-header {
             display: flex;
@@ -536,16 +588,14 @@
             </div>
         </div>
 
-
-
         <!-- 快速操作区域 -->
         <div class="quick-actions">
             <div class="function-menu">
                 <div class="default-actions">
-                    <div class="action-btn" onclick="handleQuickAction('order')">📋 订单查询</div>
-                    <div class="action-btn" onclick="handleQuickAction('service')">👨‍💼 服务咨询</div>
+                    <div class="action-btn" id="orderBtn">📋 订单查询</div>
+                    <div class="action-btn" id="serviceBtn">👨‍💼 服务咨询</div>
                 </div>
-                <button class="more-btn" onclick="toggleExpandedActions()">
+                <button class="more-btn" id="moreBtn">
                     <span style="font-size: 18px;">⋯</span>
                 </button>
             </div>
@@ -558,15 +608,13 @@
                     placeholder="输入您的问题..."
                     rows="1"
                     maxlength="1000"
-                    onkeydown="handleKeyDown(event)"
-                    oninput="adjustTextareaHeight()"
                 ></textarea>
-                <button class="send-button" id="sendButton" onclick="sendMessage()">发送</button>
+                <button class="send-button" id="sendButton">发送</button>
             </div>
         </div>
 
         <!-- 遮罩层 -->
-        <div class="overlay" id="overlay" onclick="closeExpandedActions()"></div>
+        <div class="overlay" id="overlay"></div>
         
         <!-- 展开的操作菜单 -->
         <div class="expanded-actions" id="expandedActions">
@@ -575,32 +623,32 @@
                 <div class="expanded-title">功能菜单</div>
             </div>
             <div class="expanded-grid">
-                <div class="expanded-action-btn" onclick="handleQuickAction('order'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expOrderBtn">
                     <div class="icon">📋</div>
                     <div>订单查询</div>
                 </div>
-                <div class="expanded-action-btn" onclick="handleQuickAction('service'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expServiceBtn">
                     <div class="icon">👨‍💼</div>
                     <div>服务咨询</div>
                 </div>
-                <div class="expanded-action-btn" onclick="handleQuickAction('renew'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expRenewBtn">
                     <div class="icon">🔄</div>
                     <div>订单续签</div>
                 </div>
-                <div class="expanded-action-btn" onclick="handleQuickAction('cancel'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expCancelBtn">
                     <div class="icon">❌</div>
                     <div>取消服务</div>
                 </div>
-                <div class="expanded-action-btn" onclick="handleQuickAction('complaint'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expComplaintBtn">
                     <div class="icon">💬</div>
                     <div>投诉建议</div>
                 </div>
-                <div class="expanded-action-btn" onclick="handleQuickAction('contact'); closeExpandedActions()">
+                <div class="expanded-action-btn" id="expContactBtn">
                     <div class="icon">📞</div>
                     <div>联系我们</div>
                 </div>
             </div>
-            <button class="close-expanded" onclick="closeExpandedActions()">收起菜单</button>
+            <button class="close-expanded" id="closeExpandedBtn">收起菜单</button>
         </div>
     </div>
 
@@ -610,51 +658,13 @@
         const USER_ID = 'user_123';
         const MODEL = 'haokang-agent';
 
-        // DOM元素
-        const chatMessages = document.getElementById('chatMessages');
-        const chatInput = document.getElementById('chatInput');
-        const sendButton = document.getElementById('sendButton');
-        const expandedActions = document.getElementById('expandedActions');
-        const overlay = document.getElementById('overlay');
+        // 初始化消息历史
+        let messageHistory = [];
 
-        // 从localStorage加载消息历史，如果没有则使用默认消息
-        let messageHistory = JSON.parse(localStorage.getItem('chatHistory')) || [
-            {
-                role: 'system',
-                content: '欢迎使用全能管家AI智能助理！'
-            },
-            {
-                role: 'assistant',
-                content: '您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
-            }
-        ];
-
-        // 添加消息到聊天界面
-        function addMessage(role, content, showTime = true) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = content;
-            messageDiv.appendChild(contentDiv);
-            
-            // 添加时间戳
-            if (showTime) {
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'message-time';
-                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                messageDiv.appendChild(timeDiv);
-            }
-            
-            // 添加到聊天区域
-            chatMessages.appendChild(messageDiv);
-            
-            // 滚动到最新消息
-            scrollToBottom();
-            
-            return messageDiv;
-        }
+        // DOM元素 - 在DOMContentLoaded中获取
+        let chatMessages, chatInput, sendButton, expandedActions, overlay;
+        let orderBtn, serviceBtn, moreBtn, closeExpandedBtn;
+        let expOrderBtn, expServiceBtn, expRenewBtn, expCancelBtn, expComplaintBtn, expContactBtn;
 
         // 滚动到最新消息
         function scrollToBottom() {
@@ -717,6 +727,14 @@
             document.body.style.overflow = 'auto';
         }
 
+        // 处理键盘事件
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
         // 处理快捷操作
         function handleQuickAction(action) {
             let userMessage = '';
@@ -757,12 +775,133 @@
             sendMessage();
         }
 
-        // 处理键盘事件
-        function handleKeyDown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        // 处理消息内容，将选项转换为按钮
+        function processMessageContent(content) {
+            let processedContent = content;
+            processedContent = processedContent.replace(/\n+/g, '<br>');
+            // 使用更安全的方式处理多余字符，避免正则表达式语法错误
+            processedContent = processedContent.replace(/"">/g, '');
+            processedContent = processedContent.replace(/[\'"]\)"">/g, '');
+            processedContent = processedContent.replace(/[\'"]\'">/g, '');
+            
+            // 3. 处理所有选项，采用更简单的方式
+            // 先检测是否包含选项列表
+            if (processedContent.includes('以下选项') || 
+                processedContent.includes('可供选择') || 
+                processedContent.includes('**问题**') || 
+                processedContent.includes('**可选服务**') ||
+                processedContent.includes('您需要哪种类型') ||
+                processedContent.includes('可选服务：')) {
+                
+                // 3.1 分割为行
+                const lines = processedContent.split('<br>');
+                let newContent = '';
+                
+                lines.forEach(line => {
+                    let trimmedLine = line.trim();
+                    
+                    // 清理行中的错误字符
+                    trimmedLine = trimmedLine.replace(/"">/g, '');
+                    trimmedLine = trimmedLine.replace(/[\'"]\)"">/g, '');
+                    trimmedLine = trimmedLine.replace(/[\'"]\'">/g, '');
+                    
+                    // 跳过空行
+                    if (!trimmedLine) return;
+                    
+                    // 保留提示行和开头问候语
+                    if (trimmedLine.includes('以下选项') || 
+                        trimmedLine.includes('可供选择') || 
+                        trimmedLine.includes('**问题**') ||
+                        trimmedLine.includes('**可选服务**') ||
+                        trimmedLine.includes('您需要哪种类型') ||
+                        trimmedLine.includes('可选服务：') ||
+                        trimmedLine.includes('请问') ||
+                        trimmedLine.includes('请您') ||
+                        trimmedLine.includes('您好') ||
+                        trimmedLine.includes('很高兴为您提供') ||
+                        trimmedLine.includes('我们首先需要了解') ||
+                        trimmedLine.includes('这样我们可以为您提供') ||
+                        trimmedLine.includes('为您提供更精准的推荐') ||
+                        trimmedLine.includes('请告诉我您的具体需求') ||
+                        trimmedLine.includes('我会为您进一步推荐') ||
+                        trimmedLine.includes('合适的服务方案')) {
+                        newContent += trimmedLine + '<br>';
+                        return;
+                    }
+                    
+                    // 跳过已经是按钮的行
+                    if (trimmedLine.includes('<button') || trimmedLine.includes('</button>')) {
+                        newContent += trimmedLine + '<br>';
+                        return;
+                    }
+                    
+                    // 检查是否为选项行
+                    const isOptionLine = /^(\d+\.|-|\*)\s+/.test(trimmedLine) || 
+                                        trimmedLine.includes('（') && trimmedLine.includes('）');
+                    
+                    // 如果是选项行，转换为按钮
+                    if (isOptionLine) {
+                        // 清理行中的特殊字符
+                        let cleanLine = trimmedLine;
+                        cleanLine = cleanLine.replace(/^\d+\.\s*/, ''); // 移除数字编号
+                        cleanLine = cleanLine.replace(/^-\s*/, ''); // 移除-前缀
+                        cleanLine = cleanLine.replace(/^\*\s*/, ''); // 移除*前缀
+                        cleanLine = cleanLine.trim();
+                        
+                        // 如果是有效的选项，转换为按钮
+                        if (cleanLine) {
+                            // 使用简单的方式生成按钮，避免引号嵌套问题
+                            newContent += '<button class="option-button" onclick="selectOption(\'' + cleanLine.replace(/'/g, "\\'") + '\')">' + cleanLine + '</button><br>';
+                        }
+                    } else {
+                        // 否则，保留原文本
+                        newContent += trimmedLine + '<br>';
+                    }
+                });
+                
+                processedContent = newContent;
             }
+            
+            // 4. 最后再清理一次，确保没有错误字符
+            processedContent = processedContent.replace(/"">/g, '');
+            processedContent = processedContent.replace(/[\'"]\)"">/g, '');
+            processedContent = processedContent.replace(/[\'"]\'">/g, '');
+            
+            // 5. 清理多余的<br>标签
+            processedContent = processedContent.replace(/<br>+<br>/g, '<br>');
+            processedContent = processedContent.replace(/^<br>+|\s*<br>+$/g, '');
+            
+            return processedContent;
+        }
+
+        // 添加消息到聊天界面
+        function addMessage(role, content, showTime = true) {
+            // 处理消息内容，将选项转换为按钮
+            const processedContent = processMessageContent(content);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = processedContent;
+            messageDiv.appendChild(contentDiv);
+            
+            // 添加时间戳
+            if (showTime) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                messageDiv.appendChild(timeDiv);
+            }
+            
+            // 添加到聊天区域
+            chatMessages.appendChild(messageDiv);
+            
+            // 滚动到最新消息
+            scrollToBottom();
+            
+            return messageDiv;
         }
 
         // 发送消息
@@ -862,34 +1001,10 @@
                                             contentDiv = assistantMessageDiv.querySelector('.message-content');
                                         }
                                         
-                                        // 优化显示格式：转换换行符，处理列表，减少多余空白
-                                        let displayContent = fullResponse;
+                                        // 使用processMessageContent函数处理消息内容，确保选项转换为按钮
+                                        let displayContent = processMessageContent(fullResponse);
                                         
-                                        // 1. 先在选项前添加换行，处理连续的选项格式：- 选项1: xxx - 选项2: xxx
-                                        displayContent = displayContent.replace(/(-\s*选项\d+)/g, '<br>$1');
-                                        
-                                        // 2. 转换原始换行符为<br>标签
-                                        displayContent = displayContent.replace(/\n+/g, '<br>');
-                                        
-                                        // 3. 处理连续的数字分点，如"1. xxx 2. xxx"，在数字编号前添加换行
-                                        displayContent = displayContent.replace(/(\d+\.\s)/g, '<br>$1');
-                                        
-                                        // 4. 移除开头的多余换行
-                                        displayContent = displayContent.replace(/^<br>+/, '');
-                                        
-                                        // 5. 合并多个连续换行符为一个，避免重复换行
-                                        displayContent = displayContent.replace(/<br>+<br>/g, '<br>');
-                                        
-                                        // 6. 将选项转换为可点击按钮
-                                        // 匹配格式：- 选项1: xxx - 选项2: xxx
-                                        // 使用lookahead确保只匹配到当前选项的内容
-                                        const optionRegex = /-\s*选项(\d+):\s*([^-]+?)(?=-\s*选项|$)/g;
-                                        displayContent = displayContent.replace(optionRegex, '<button class="option-button" onclick="selectOption(\'选项$1:$2\')" style="display: block; margin: 8px 0; padding: 10px 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px;">选项$1: $2</button>');
-                                        
-                                        // 7. 处理中文冒号的情况
-                                        const optionRegexChinese = /-\s*选项(\d+)：\s*([^-]+?)(?=-\s*选项|$)/g;
-                                        displayContent = displayContent.replace(optionRegexChinese, '<button class="option-button" onclick="selectOption(\'选项$1:$2\')" style="display: block; margin: 8px 0; padding: 10px 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px;">选项$1: $2</button>');
-                                        
+                                        // 确保选项按钮正确显示
                                         contentDiv.innerHTML = displayContent;
                                         scrollToBottom();
                                     }
@@ -927,13 +1042,109 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            // 清空聊天界面，准备加载历史记录
-            chatMessages.innerHTML = '';
+            // 获取DOM元素
+            chatMessages = document.getElementById('chatMessages');
+            chatInput = document.getElementById('chatInput');
+            sendButton = document.getElementById('sendButton');
+            expandedActions = document.getElementById('expandedActions');
+            overlay = document.getElementById('overlay');
             
-            // 加载历史消息到聊天界面
-            messageHistory.forEach(msg => {
-                addMessage(msg.role, msg.content);
+            // 功能菜单按钮
+            orderBtn = document.getElementById('orderBtn');
+            serviceBtn = document.getElementById('serviceBtn');
+            moreBtn = document.getElementById('moreBtn');
+            closeExpandedBtn = document.getElementById('closeExpandedBtn');
+            
+            // 展开菜单按钮
+            expOrderBtn = document.getElementById('expOrderBtn');
+            expServiceBtn = document.getElementById('expServiceBtn');
+            expRenewBtn = document.getElementById('expRenewBtn');
+            expCancelBtn = document.getElementById('expCancelBtn');
+            expComplaintBtn = document.getElementById('expComplaintBtn');
+            expContactBtn = document.getElementById('expContactBtn');
+            
+            // 添加事件监听器
+            chatInput.addEventListener('keydown', handleKeyDown);
+            chatInput.addEventListener('input', adjustTextareaHeight);
+            sendButton.addEventListener('click', sendMessage);
+            moreBtn.addEventListener('click', toggleExpandedActions);
+            closeExpandedBtn.addEventListener('click', closeExpandedActions);
+            overlay.addEventListener('click', closeExpandedActions);
+            
+            // 功能按钮事件
+            orderBtn.addEventListener('click', () => handleQuickAction('order'));
+            serviceBtn.addEventListener('click', () => handleQuickAction('service'));
+            
+            // 展开菜单按钮事件
+            expOrderBtn.addEventListener('click', () => {
+                handleQuickAction('order');
+                closeExpandedActions();
             });
+            expServiceBtn.addEventListener('click', () => {
+                handleQuickAction('service');
+                closeExpandedActions();
+            });
+            expRenewBtn.addEventListener('click', () => {
+                handleQuickAction('renew');
+                closeExpandedActions();
+            });
+            expCancelBtn.addEventListener('click', () => {
+                handleQuickAction('cancel');
+                closeExpandedActions();
+            });
+            expComplaintBtn.addEventListener('click', () => {
+                handleQuickAction('complaint');
+                closeExpandedActions();
+            });
+            expContactBtn.addEventListener('click', () => {
+                handleQuickAction('contact');
+                closeExpandedActions();
+            });
+            
+            try {
+                // 加载本地存储的聊天历史
+                const savedHistory = localStorage.getItem('chatHistory');
+                if (savedHistory) {
+                    messageHistory = JSON.parse(savedHistory);
+                    console.log('已加载历史记录:', messageHistory.length, '条消息');
+                    
+                    // 清空聊天界面，准备加载历史记录
+                    chatMessages.innerHTML = '';
+                    
+                    // 加载历史消息到聊天界面
+                    messageHistory.forEach(msg => {
+                        addMessage(msg.role, msg.content);
+                    });
+                } else {
+                    // 如果没有历史记录，使用默认消息
+                    messageHistory = [
+                        {
+                            role: 'system',
+                            content: '欢迎使用全能管家AI智能助理！'
+                        },
+                        {
+                            role: 'assistant',
+                            content: '您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
+                        }
+                    ];
+                    // 保存默认消息到localStorage
+                    localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
+                    console.log('已创建默认历史记录');
+                }
+            } catch (error) {
+                console.error('加载聊天历史失败:', error);
+                // 使用默认消息
+                messageHistory = [
+                    {
+                        role: 'system',
+                        content: '欢迎使用全能管家AI智能助理！'
+                    },
+                    {
+                        role: 'assistant',
+                        content: '您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
+                    }
+                ];
+            }
             
             // 设置输入框焦点
             chatInput.focus();
