@@ -396,8 +396,18 @@
             chatInput.value = '';
             adjustTextareaHeight();
             
-            // 显示加载状态
-            showLoading();
+            // 隐藏旧的加载状态
+            hideLoading();
+            
+            // 创建一个空的智能体消息元素用于实时更新
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'message assistant';
+            const contentDiv = document.createElement('div');
+            assistantMessageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(assistantMessageDiv);
+            scrollToBottom();
+            
+            let fullResponse = '';
             
             try {
                 // 发送请求到API
@@ -409,7 +419,8 @@
                     body: JSON.stringify({
                         model: MODEL,
                         messages: messageHistory.slice(-10), // 只发送最近10条消息
-                        user: USER_ID
+                        user: USER_ID,
+                        stream: true // 启用流式响应
                     })
                 });
                 
@@ -417,22 +428,62 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                const data = await response.json();
-                const assistantMessage = data.choices[0].message.content;
+                // 获取响应流的读取器
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
                 
-                // 隐藏加载状态
-                hideLoading();
+                // 读取流数据
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    // 解码新收到的数据
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // 处理缓冲区中的数据
+                    let newlineIndex;
+                    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                        const line = buffer.slice(0, newlineIndex).trim();
+                        buffer = buffer.slice(newlineIndex + 1);
+                        
+                        if (line.startsWith('data: ')) {
+                            const jsonStr = line.slice(6);
+                            if (jsonStr === '[DONE]') {
+                                // 流式响应结束
+                                break;
+                            }
+                            
+                            try {
+                                const data = JSON.parse(jsonStr);
+                                // 处理流式数据
+                                if (data.choices && data.choices[0]) {
+                                    const delta = data.choices[0].delta;
+                                    if (delta.content) {
+                                        fullResponse += delta.content;
+                                        contentDiv.textContent = fullResponse;
+                                        scrollToBottom();
+                                    }
+                                }
+                            } catch (jsonError) {
+                                console.error('JSON解析错误:', jsonError, '原始数据:', jsonStr);
+                            }
+                        }
+                    }
+                }
                 
-                // 添加智能体消息到聊天界面
-                addMessage('assistant', assistantMessage);
+                // 添加时间戳
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                assistantMessageDiv.appendChild(timeDiv);
                 
                 // 添加到消息历史
-                messageHistory.push({ role: 'assistant', content: assistantMessage });
+                messageHistory.push({ role: 'assistant', content: fullResponse });
                 
             } catch (error) {
                 console.error('Error:', error);
-                hideLoading();
-                addMessage('assistant', `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`);
+                contentDiv.innerHTML = `抱歉，服务暂时不可用，请稍后重试。\n错误信息：${error.message}`;
             } finally {
                 // 启用发送按钮和输入框
                 sendButton.disabled = false;

@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     user: str
     max_tokens: Optional[int] = 500
     temperature: Optional[float] = 0.1
+    stream: Optional[bool] = False
 
 
 class ChatResponse(BaseModel):
