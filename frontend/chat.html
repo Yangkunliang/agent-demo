@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>全能管家AI智能助理</title>
+    <title>AI智能助理</title>
     <style>
         /* 全局样式重置 */
         * {
@@ -202,27 +202,28 @@
 
         /* 功能菜单 */
         .function-menu {
-            padding: 15px;
+            padding: 12px 15px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 10px;
+            margin-bottom: 0px;
         }
 
         /* 默认操作按钮 */
         .default-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             flex: 1;
+            flex-wrap: wrap;
         }
 
         /* 操作按钮样式 */
         .action-btn {
-            padding: 12px 16px;
+            padding: 10px 14px;
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
@@ -231,7 +232,11 @@
             align-items: center;
             justify-content: center;
             min-width: 80px;
+            max-width: 120px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .action-btn:hover {
@@ -569,7 +574,7 @@
     <div class="chat-container">
         <!-- 顶部导航栏 -->
         <div class="chat-header">
-            <h1>🤖 全能管家AI智能助理</h1>
+            <h1>🤖 AI智能助理</h1>
             <div class="status">在线服务中</div>
         </div>
 
@@ -578,12 +583,12 @@
             <!-- 欢迎消息 -->
             <div class="message system">
                 <div class="message-content">
-                    欢迎使用全能管家AI智能助理！
+                    欢迎使用AI智能助理！
                 </div>
             </div>
             <div class="message assistant">
                 <div class="message-content">
-                    您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？
+                    您好！我是AI智能助理，很高兴为您服务。请问有什么可以帮助您的？
                 </div>
             </div>
         </div>
@@ -594,6 +599,7 @@
                 <div class="default-actions">
                     <div class="action-btn" id="orderBtn">📋 订单查询</div>
                     <div class="action-btn" id="serviceBtn">👨‍💼 服务咨询</div>
+                    <div class="action-btn" id="findPersonBtn">👥 找人服务</div>
                 </div>
                 <button class="more-btn" id="moreBtn">
                     <span style="font-size: 18px;">⋯</span>
@@ -630,6 +636,10 @@
                 <div class="expanded-action-btn" id="expServiceBtn">
                     <div class="icon">👨‍💼</div>
                     <div>服务咨询</div>
+                </div>
+                 <div class="expanded-action-btn" id="expFindPersonBtn">
+                    <div class="icon">👥</div>
+                    <div>找人服务</div>
                 </div>
                 <div class="expanded-action-btn" id="expRenewBtn">
                     <div class="icon">🔄</div>
@@ -745,6 +755,9 @@
                     break;
                 case 'service':
                     userMessage = '我想咨询服务相关问题';
+                    break;
+                case 'findPerson':
+                    userMessage = '找人服务';
                     break;
                 case 'renew':
                     userMessage = '我想续签订单';
@@ -1057,12 +1070,14 @@
             // 功能菜单按钮
             orderBtn = document.getElementById('orderBtn');
             serviceBtn = document.getElementById('serviceBtn');
+            findPersonBtn = document.getElementById('findPersonBtn');
             moreBtn = document.getElementById('moreBtn');
             closeExpandedBtn = document.getElementById('closeExpandedBtn');
             
             // 展开菜单按钮
             expOrderBtn = document.getElementById('expOrderBtn');
             expServiceBtn = document.getElementById('expServiceBtn');
+            expFindPersonBtn = document.getElementById('expFindPersonBtn');
             expRenewBtn = document.getElementById('expRenewBtn');
             expCancelBtn = document.getElementById('expCancelBtn');
             expComplaintBtn = document.getElementById('expComplaintBtn');
@@ -1079,6 +1094,7 @@
             // 功能按钮事件
             orderBtn.addEventListener('click', () => handleQuickAction('order'));
             serviceBtn.addEventListener('click', () => handleQuickAction('service'));
+            findPersonBtn.addEventListener('click', () => handleQuickAction('findPerson'));
             
             // 展开菜单按钮事件
             expOrderBtn.addEventListener('click', () => {
@@ -1087,6 +1103,10 @@
             });
             expServiceBtn.addEventListener('click', () => {
                 handleQuickAction('service');
+                closeExpandedActions();
+            });
+            expFindPersonBtn.addEventListener('click', () => {
+                handleQuickAction('findPerson');
                 closeExpandedActions();
             });
             expRenewBtn.addEventListener('click', () => {
@@ -1125,11 +1145,11 @@
                     messageHistory = [
                         {
                             role: 'system',
-                            content: '欢迎使用全能管家AI智能助理！'
+                            content: '欢迎使用AI智能助理！'
                         },
                         {
                             role: 'assistant',
-                            content: '您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
+                            content: '您好！我是AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
                         }
                     ];
                     // 保存默认消息到localStorage
@@ -1142,11 +1162,11 @@
                 messageHistory = [
                     {
                         role: 'system',
-                        content: '欢迎使用全能管家AI智能助理！'
+                        content: '欢迎使用AI智能助理！'
                     },
                     {
                         role: 'assistant',
-                        content: '您好！我是全能管家AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
+                        content: '您好！我是AI智能助理，很高兴为您服务。请问有什么可以帮助您的？'
                     }
                 ];
             }
