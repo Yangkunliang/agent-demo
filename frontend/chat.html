@@ -1,3 +1,35 @@
+        // 处理快捷操作
+        function handleQuickAction(action) {
+            let userMessage = "";
+            
+            switch(action) {
+                case "order":
+                    userMessage = "我想查询我的订单";
+                    break;
+                case "service":
+                    userMessage = "我想咨询服务相关问题";
+                    break;
+                case "findPerson":
+                    userMessage = "找人服务";
+                    break;
+                case "renew":
+                    userMessage = "我想续签订单";
+                    break;
+                case "cancel":
+                    userMessage = "我想取消服务";
+                    break;
+                case "complaint":
+                    userMessage = "我要投诉或建议";
+                    break;
+                case "contact":
+                    userMessage = "我想联系客服";
+                    break;
+            }
+            
+            // 设置输入框内容并发送
+            chatInput.value = userMessage;
+            adjustTextareaHeight();
+            sendMessage();
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
