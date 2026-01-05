@@ -11,6 +11,7 @@ class DifyService:
         # 从环境变量获取配置
         self.api_key = os.environ.get('DIFY_API_KEY', '')
         self.app_id = os.environ.get('DIFY_APP_ID', '')
+        self.api_base_url = os.environ.get('DIFY_API_URL', 'http://localhost:5001')
         
         # 验证配置
         if not self.api_key:
@@ -43,12 +44,12 @@ class DifyService:
         }
         
         # Dify 1.11.2版本的API端点是 /v1/chat-messages
-        api_url = "http://localhost:5001/v1/chat-messages"
+        api_url = f"{self.api_base_url}/v1/chat-messages"
         
-        # 构建请求数据
+        # 构建请求数据，按照Dify API要求的格式
         data = {
-            "inputs": {},
-            "query": messages[-1]['content'],
+            "inputs": {},  # 必填字段，即使是空对象
+            "query": messages[-1]['content'],  # 只传递最新的用户消息
             "response_mode": "streaming" if stream else "blocking",
             "conversation_id": None,
             "user": user_id
@@ -57,13 +58,22 @@ class DifyService:
         print(f"[DEBUG] API URL: {api_url}")
         print(f"[DEBUG] Request data: {data}")
         
-        # 直接调用Dify API，不做任何错误处理，让错误自然抛出
-        response = requests.post(api_url, headers=headers, json=data, stream=stream)
-        print(f"[DEBUG] Response status: {response.status_code}")
-        print(f"[DEBUG] Response headers: {dict(response.headers)}")
-        
-        # 先检查响应状态码
-        response.raise_for_status()
+        # 直接调用Dify API，添加详细的错误处理
+        try:
+            response = requests.post(api_url, headers=headers, json=data, stream=stream)
+            print(f"[DEBUG] Response status: {response.status_code}")
+            print(f"[DEBUG] Response headers: {dict(response.headers)}")
+            
+            # 先检查响应状态码
+            response.raise_for_status()
+            print(f"[DEBUG] Response content: {response.text[:500]}...")
+        except requests.exceptions.HTTPError as e:
+            print(f"[ERROR] HTTP Error: {e}")
+            print(f"[ERROR] Response content: {response.text}")
+            raise
+        except Exception as e:
+            print(f"[ERROR] Unexpected Error: {e}")
+            raise
         
         # 无论是否请求了流式响应，都返回响应对象，让调用者处理
         return response

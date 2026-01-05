@@ -42,8 +42,24 @@ services:
     networks:
       - dify-network
 
+  db:
+    image: ankane/pgvector:latest
+    container_name: docker-db_postgres-1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: difyai123456
+      POSTGRES_DB: dify
+    ports:
+      - "5432:5432"
+    volumes:
+      - dify-postgres-data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - dify-network
+
 volumes:
   dify-redis-data:
+  dify-postgres-data:
 
 networks:
   dify-network:
