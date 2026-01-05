@@ -39,7 +39,7 @@ Dify服务器提供了大模型集成和向量检索功能。
    ```
 3. 启动Dify服务器：
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 4. 等待约30秒，确保Dify服务器完全启动，可以通过 
    ``` bash
@@ -122,7 +122,7 @@ haokang-agent后端服务提供了聊天接口。
 
 在Dify项目目录中执行：
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### 4. 关闭Docker
